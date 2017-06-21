@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Dog Viewer</title>
+    <link rel="stylesheet" type="text/css" href="/assets/dog-viewer.css">
+</head>
+
+<body>
+    <div class="editor"></div>
+    <script type="text/javascript" src="https://cdn.wilddog.com/sdk/js/2.5.6/wilddog.js"></script>
+    <script type="text/javascript" src="/src/dog-viewer.js"></script>
+    <script type="text/javascript">
+    rootConfig = {
+        authDomain: "testbug.wilddog.com",
+        syncURL: "https://" + 'testbug' + ".wilddogio.com",
+        websocketOnly: true
+    };
+
+    wilddog.initializeApp(rootConfig);
+    var ref = wilddog.sync().ref();
+
+    var viewController = new DomView(document.querySelector(".editor"), function(url, rmCallback) {
+        // var res = window.confirm("sure to delete :" + url + " ?");
+        // if (res) {
+            rmCallback(url);
+        // }
+    });
+    
+    var jstree = new DogViewer(ref, viewController);
+    jstree.init();
+    </script>
+</body>
+
+</html>

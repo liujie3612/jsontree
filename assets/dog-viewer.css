@@ -1,0 +1,505 @@
+a {
+    text-decoration: none
+}
+
+.spriteBtn {
+    background-image: url('/assets/data/data-button.svg');
+    display: inline-block;
+    text-indent: -9999px;
+    vertical-align: middle;
+    position: relative;
+}
+
+.spriteBtn.addBtn {
+    background-position: -2px -1px;
+    height: 13px;
+    margin-left: 16px;
+    width: 13px;
+    margin-right: 10px;
+}
+
+.spriteBtn.addBtn:hover {
+    background-position: -2px -55px;
+}
+
+.spriteBtn.removeBtn {
+    background-position: -3px -15px;
+    height: 11px;
+    margin-right: 8px;
+    width: 11px;
+}
+
+.spriteBtn.removeBtn:hover {
+    background-position: -3px -69px;
+}
+
+.spriteBtn.exportBtn {
+    background-position: 0 -40px;
+    height: 14px;
+    margin-left: 8px;
+    width: 18px;
+    margin-right: 16px;
+    margin-top: -1px;
+}
+
+.spriteBtn.exportBtn:hover {
+    background-position: 0 -94px;
+}
+
+.spriteBtn.importBtn {
+    background-position: 0 -26px;
+    height: 14px;
+    margin-left: 8px;
+    width: 18px;
+    margin-top: 0;
+}
+
+.spriteBtn.importBtn:hover {
+    background-position: 0 -80px;
+}
+
+.cancelBtn {
+    background-position: -18px 0;
+    height: 24px;
+    line-height: 24px;
+    width: 54px;
+}
+
+.cancelBtn:hover {
+    background-position: -18px -24px;
+}
+
+.cancelBtn:focus {
+    background-position: -18px -48px;
+    outline: none;
+}
+
+.confirmBtn {
+    background-position: -72px -24px;
+    height: 24px;
+    line-height: 24px;
+    margin-left: 10px;
+    width: 54px;
+}
+
+.confirmBtn:hover {
+    background-position: -72px -48px;
+}
+
+.confirmBtn:focus {
+    background-position: -72px -72px;
+    outline: none;
+}
+
+.button:hover {
+    text-decoration: none;
+}
+
+.jstree {
+    background-color: #fcfcfc;
+    clear: none;
+    float: left;
+    letter-spacing: 0.8px;
+    max-width: 565px;
+    margin-left: 25px;
+    margin-top: 40px;
+    margin-bottom: 40px;
+    font-size: 12px;
+    position: relative;
+    z-index: 100;
+}
+
+.data-over-warning {
+    margin-top: 24px;
+    padding-left: 8px;
+    padding-right: 8px;
+    -webkit-box-sizing: border-box;
+    box-sizing: border-box;
+    -moz-box-sizing: border-box;
+    width: 100%;
+    height: 36px;
+    line-height: 34px;
+    color: #e6501e;
+    border: 1px solid #e6501e;
+}
+
+.close-warning {
+    float: right;
+    width: 12px;
+    height: 12px;
+    cursor: pointer;
+}
+
+.tree-content {
+    border: 1px solid transparent;
+    border-radius: 3px;
+    padding: 4px 3px 5px 4px;
+    text-align: center;
+    background-color: #fcfcfc;
+    position: relative;
+}
+
+.tree-content-hover {
+    border-color: rgb( 204, 204, 204);
+}
+
+.adding .tree-content {
+    border-color: rgb( 204, 204, 204);
+}
+
+.jstree .confirm>ins {
+    background: 0 0;
+}
+
+.jstree .root>div>ins {
+    background: 0 0;
+}
+
+.jstree a,
+.jstree a:hover,
+.jstree a:visited {
+    color: inherit;
+}
+
+.jstree-default .jstree-open,
+.jstree-default .jstree-closed {
+    font-size: 12px;
+    /* font-weight: 600; */
+}
+
+.jstree-default .jstree-leaf {
+    color: #565d63;
+    font-size: 12px;
+}
+
+.jstree-default .jstree-leaf .name {
+    /* font-weight: 600; */
+    color: rgb(51, 51, 51);
+}
+
+.jstree ul,
+.jstree li {
+    display: block;
+    list-style-type: none;
+    margin: 0;
+    padding: 0;
+}
+
+.jstree li {
+    display: block;
+    line-height: 26px;
+    margin-left: 33px;
+    min-height: 26px;
+    min-width: 33px;
+    white-space: nowrap;
+}
+
+.jstree li.jstree-open>ul {
+    display: block;
+}
+
+.jstree li.jstree-closed>ul {
+    display: none;
+}
+
+.jstree>ul>li {
+    margin-left: 0;
+}
+
+.jstree ins {
+    display: inline-block;
+    height: 28px;
+    margin: 0;
+    padding: 0;
+    text-decoration: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    -webkit-user-select: none;
+    user-select: none;
+    width: 33px;
+}
+
+.jstree-default li,
+.jstree-default .jstree-icon {
+    background-color: transparent;
+    background-image: url('/assets/data/tree.svg');
+    background-repeat: no-repeat;
+}
+
+.jstree-default li {
+    background-position: -99px 0;
+    background-repeat: repeat-y;
+}
+
+.jstree-default li:last-child {
+    background: 0 0;
+}
+
+.jstree-default .jstree-open>div>ins {
+    background-position: 0 0;
+}
+
+.jstree-default .jstree-open.jstree-root>div>ins {
+    background-position: 0 -7px;
+}
+
+.jstree-default .jstree-closed>div>ins {
+    background-position: -33px 0;
+}
+
+.jstree-default .jstree-closed.jstree-root>div>ins {
+    background-position: -33px -7px;
+}
+
+.jstree-default .jstree-root>div>ins {
+    height: 14px;
+    line-height: 14px;
+    width: 33px;
+}
+
+.jstree-default .jstree-root>div .tree-content {
+    line-height: 14px;
+}
+
+.jstree-default .jstree-showmore>div .tree-content {
+    background: #f3faff;
+    border: 1px solid #0f97f9;
+    border-radius: 3px;
+    color: #0f97f9;
+    font-size: 14px;
+    /* font-weight: 400; */
+    margin-bottom: 20px;
+    padding: 0 10px;
+}
+
+.jstree-default .jstree-leaf>div>ins {
+    background-position: -66px 0;
+}
+
+.valueContainer {
+    display: inline-block;
+    min-width: 80px;
+    max-width: 350px;
+    position: relative;
+}
+
+.valueedit {
+    position: relative;
+    top: 0.5px;
+    outline: 0;
+    font-size: 12px;
+    border: 1px solid transparent;
+    background: 0 0;
+    cursor: text;
+    padding: 0 5px;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    line-height: 1.4;
+    border-radius: 3px;
+}
+
+.valueedit:disabled,
+.valueedit[disabled=disabled] {
+    cursor: text;
+}
+
+.valueedit.hover {
+    border: 1px solid #565d63;
+    min-width: 100px;
+}
+
+.valueedit:focus,
+.nameInput:focus,
+.valueInput:focus {
+    border: 1px solid rgb( 102, 102, 102);
+}
+
+.nameInput,
+.valueInput {
+    font-size: 12px;
+    color: rgb( 51, 51, 51);
+    background: 0 0;
+    width: 100px;
+    border: 1px solid rgb(204, 204, 204);
+    border-radius: 0;
+    outline: 0;
+    padding: 0;
+    height: 20px;
+    line-height: 20px;
+    border-radius: 3px;
+    padding-left: 8px;
+}
+
+.nameInput,
+.valueInput {
+    margin-left: 2px;
+}
+
+.valueLabel {
+    padding-left: 9px;
+}
+
+.valueInput {
+    width: 160px;
+}
+
+.adding .tree-content {
+    border-color: #a8adb3;
+}
+
+.added {
+    border: 1px solid rgb( 50, 175, 90);
+    background-color: rgba( 50, 175, 90, .1);
+}
+
+.removed {
+    border: 1px solid rgb( 235, 50, 50);
+    background-color: rgba( 235, 50, 50, .1);
+}
+
+.changed {
+    border: 1px solid rgb( 230, 150, 40);
+    background-color: rgba( 230, 150, 40, .1);
+}
+
+.moved {
+    border: 1px solid rgb( 60, 150, 230);
+    background-color: rgba( 60, 150, 230, .1);
+}
+
+.js-root>div>ins.jstree-icon {
+    display: none;
+}
+
+.division {
+    color: rgb( 204, 204, 204);
+}
+
+.js-root > div {
+    margin-bottom: 2px;
+}
+
+.js-root > div .tree-content > a,
+.jstree-open > div .tree-content > a,
+.jstree-closed > div .tree-content > a {
+    visibility: hidden;
+}
+
+.js-root span.division,
+.jstree-open span.division,
+.jstree-closed span.division {
+    visibility: hidden;
+}
+
+.js-root > div .tree-content > a:before {
+    content: '';
+    position: absolute;
+    display: inline-block;
+    width: 87px;
+    height: 28px;
+    line-height: 28px;
+    border-radius: 3px;
+    font-size: 12px;
+    color: rgb( 255, 255, 255);
+    background-color: rgb( 102, 102, 102);
+    text-align: center;
+    z-index: 200;
+    top: -37px;
+    left: -20px;
+    text-indent: 0;
+    visibility: hidden;
+}
+
+.js-root > div .tree-content > .addBtn:before {
+    content: '添加子节点';
+}
+
+.js-root > div .tree-content > .importBtn:before {
+    content: '导入数据';
+}
+
+.js-root > div .tree-content > .exportBtn:before {
+    content: '导出数据';
+}
+
+.js-root > div .tree-content > a:after {
+    content: "";
+    position: absolute;
+    width: 0;
+    height: 0;
+    border-left: 8px solid transparent;
+    border-right: 8px solid transparent;
+    border-top: 8px solid rgb( 102, 102, 102);
+    top: -9px;
+    visibility: hidden;
+}
+
+.js-root > div .tree-content > .addBtn:after {
+    left: -1px;
+}
+
+.js-root > div .tree-content > .importBtn:after,
+.js-root > div .tree-content > .exportBtn:after {
+    left: 1px;
+}
+
+.js-root > div .tree-content > a:hover::before {
+    visibility: visible;
+}
+
+.js-root > div .tree-content > a:hover::after {
+    visibility: visible;
+}
+
+.sync-func-del {
+    position: absolute;
+    right: -24px;
+    top: 3px;
+    background: #fff;
+    z-index: 100;
+    height: 21px;
+    padding-left: 8px;
+    display: none;
+}
+
+.sync-func-del .data-confirm,
+.sync-func-del .data-cancle {
+    border: none;
+    letter-spacing: 1px;
+    font-size: 12px;
+    display: inline;
+    cursor: pointer;
+    padding: 4px 13px 3px;
+    position: relative;
+    top: -6.5px;
+}
+
+.sync-func-del .data-cancle {
+    background-color: #f5f5f5;
+    color: #333;
+    margin-left: 8px;
+    margin-right: 8px;
+    border-radius: 3px;
+}
+
+.sync-func-del .data-cancle:hover {
+    background-color: rgba(245, 245, 245, .8);
+    color: #666;
+}
+
+.tree-content > .sync-func-del {
+    top: 1px;
+    right: 2px;
+}
+
+.js-root > div .tree-content > .sync-func-del {
+    display: none !important;
+}
+
+.tree-content span .spriteBtn {
+    visibility: hidden;
+}
+
+.tree-content-hover span .spriteBtn,.tree-content-hover span .division {
+    visibility: visible;
+}
