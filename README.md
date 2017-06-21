@@ -1,12 +1,9 @@
-# dog-viewer
-wilddog data viewer and editor
+# wilddog data viewer and editor
 
 ## 依赖安装
 
 ```
 npm install
-bower install
-
 ```
 
 ## 调试
