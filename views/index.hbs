@@ -38,30 +38,25 @@
 </head>
 
 <body>
-    <div class="jstree jstree-forcused jstree-default"></div>
+    <div class="jstree jstree-forcused jstree-default">
+        <ul></ul>
+    </div>
     <script type="text/javascript" src="https://cdn.wilddog.com/sdk/js/2.5.6/wilddog.js"></script>
+    <script type="text/javascript" src="/scripts/jquery-3.2.1.min.js"></script>
     <script type="text/javascript" src="/scripts/jsontree.js"></script>
     <script type="text/javascript">
-    rootConfig = {
-        authDomain: "14789.wilddog.com",
-        syncURL: "https://" + '14789' + ".wilddogio.com",
+    var appid = '14789'
+
+    var host = appid + '.wilddogio.com';
+    var rootConfig = {
+        authDomain: appid + ".wilddog.com",
+        syncURL: "https://" + appid + ".wilddogio.com",
         websocketOnly: true
     };
     wilddog.initializeApp(rootConfig);
+    var rootRef = wilddog.sync().ref();
     
-    var ref = wilddog.sync().ref();
-    // var ref = wilddog.sync().ref('messageboard');
-    
-    var viewController = new DomView(document.querySelector(".jstree"), function(url, rmCallback) {
-        rmCallback(url);
-    });
-
-    var jstree = new DogViewer(ref, viewController);
-    
-    var path = '/'
-    var path = 'messageboard'
-
-    jstree.init(path);
+    jsTree('.jstree', host, 'messageboard')
     </script>
 </body>
 
