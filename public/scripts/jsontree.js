@@ -162,10 +162,11 @@ DomView.prototype._newEditNode = function(rmCallback) {
 DomView.prototype._newNode = function(url, value, shallow) {
     //shallow：Reset is used
     var self = this;
-    var doc = new DOMParser().parseFromString(DomView.Templates.leaf, "text/html");
-    var res = doc.body.firstChild;
+    var leaf = new DOMParser().parseFromString(DomView.Templates.leaf, "text/html");
 
+    var res = leaf.body.firstChild;
     var path = decodeURIComponent(url.pathname);
+    console.log(url.pathname)
     res.id = this.prx + url.pathname;
     var name = res.querySelector("a.name");
     name.href = url;
@@ -355,7 +356,6 @@ DomView.prototype._updateNodeValue = function(dom, value) {
 }
 
 DomView.prototype._insertAfter = function(parentDom, url, toInsert) {
-
     if (url == null) {
         if (parentDom.firstChild == null) {
             parentDom.appendChild(toInsert);
@@ -366,7 +366,6 @@ DomView.prototype._insertAfter = function(parentDom, url, toInsert) {
         var path = decodeURIComponent(url.pathname);
         var prDomId = this.prx + path;
         var prDom = document.getElementById(prDomId);
-
         if (prDom == parentDom.lastChild) {
             parentDom.appendChild(toInsert);
         } else {
@@ -397,20 +396,20 @@ DomView.prototype.remoteAddNode = function(url, prKey, value, shallow) {
     var self = this;
     var parentDom = self.rootDom;
 
-    if (url.pathname != '/') {
-        parentDom = document.getElementById(this.prx + url._parent().pathname).querySelector('ul');
-    }
-
-    // if(typeof val == 'object') {
-
+    // if (url.pathname != '/') {
+    //     parentDom = document.getElementById(this.prx + url._parent().pathname).querySelector('ul');
     // }
-        
+
     var node = this._newNode(url, value, shallow);
+    console.log(node)
+
     if (prKey == null) {
         this._insertAfter(parentDom, null, node);
     } else {
         this._insertAfter(parentDom, url._parent()._child(prKey), node);
     }
+
+
     addClass(node.querySelector(".tree-content"), "added")
         //TODO: css class change
     setTimeout(function() {
@@ -476,7 +475,6 @@ DomView.prototype.onQuery = function(callback) {
 var DogViewer = function(ref, viewController) {
     this.ref = ref;
     this.url = new URL(this.ref.toString());
-    // console.log(this.url)
     this.rootPath = decodeURIComponent(this.url.pathname);
     this.view = viewController;
     this.inited = false;
@@ -488,32 +486,45 @@ var DogViewer = function(ref, viewController) {
 //null and leaf can be edited
 //path can only be removed
 
-DogViewer.prototype.init = function() {
+DogViewer.prototype.init = function(path) {
     var self = this;
+    var childRef = this.ref.child(path)
 
     if (this.forceRest) {
         self.mode = 1;
         self.inited = true;
         this.initWithRest(ref);
     } else {
-        this.ref.on('value', function(snap, prev) {
-            //init with client
-            //init root
-            self.mode = 0;
-            if (self.inited) {
-                //do nothing
-            } else {
-                self.inited = true;
-                self._addRoot(self.ref, snap.val());
-                // console.log('key +++++' + keysnap.key(),'prev ++++++' + prev)
-                // self._addNode(self.ref, snap.key(), prev, snap.val());
-            }
-        }, function(err) {
-            //init with rest
-            self.mode = 1;
-            self.inited = true;
-            this.initWithRest(ref);
-        })
+        wilddog.auth().onAuthStateChanged(function(user) {
+                // if (!user) {
+                //     return;
+                // }
+                wilddog.sync().ref(path).once('value')
+                    .then(function(snap, prev) {
+                        self.mode = 0;
+                        if (!self.inited) {
+                            self.inited = true;
+                            self.key = null
+                            if (snap.key() == null) {
+                                self.key = '/'
+                            } else {
+                                self.key = '/' + snap.key()
+                            }
+                            self._addNode(self.ref, self.key, prev, snap.val());
+                        }
+                    }, function(err) {
+                        //init with rest
+                        self.mode = 1;
+                        self.inited = true;
+                        this.initWithRest(ref);
+                    })
+            })
+            // if (opt && opt.token) {
+            //     wilddog.auth().signInWithCustomToken(opt.token).then(function() {
+            //     }).catch(function(err) {
+            //         console.info("login failed", err)
+            //     });
+            // }
     }
 
     this.view.onSet(function(url, value) {
@@ -523,13 +534,14 @@ DogViewer.prototype.init = function() {
             self.view.remoteChangeNode(new URL(url), value);
         }
     });
+
     this.view.onRemove(function(url) {
         self.ref.child(decodeURIComponent(new URL(url).pathname)).remove();
-
         if (self.mode == 1) {
             this.view.remoteRemoveNode(new URL(url))
         }
     });
+
     this.view.onQuery(function(url) {
         self._addNodeWithRest(decodeURIComponent(url));
 
@@ -540,6 +552,37 @@ DogViewer.prototype.setForceRest = function() {
     this.forceRest = true;
 }
 
+// DogViewer.prototype._addRoot = function(ref, value) {
+//     this.view.remoteAddNode(new URL(ref.toString()), null, value);
+//     this._initEventListener(ref);
+// }
+
+DogViewer.prototype._addNode = function(ref, key, prKey, value) {
+    console.log(ref.child(key).toString())
+
+    this.view.remoteAddNode(new URL(ref.child(key).toString()), prKey, value);
+    this._initEventListener(ref.child(key));
+}
+
+DogViewer.prototype._changeNode = function(ref, key, prKey, value) {
+    this.view.remoteChangeNode(new URL(ref.child(key).toString()), value);
+}
+
+DogViewer.prototype._removeNode = function(ref, key) {
+    this.view.remoteRemoveNode(new URL(ref.child(key).toString()))
+    this._destroyEventListener(ref.child(key));
+}
+
+DogViewer.prototype._moveNode = function(ref, key, prKey) {
+    this.view.remoteMoveNode(new URL(ref.child(key).toString()), prKey);
+}
+
+DogViewer.prototype.initWithRest = function(ref) {
+    var url = ref.toString();
+    this.view.remoteAddNode(new URL(url), null, {});
+    this._addNodeWithRest(ref.toString());
+}
+
 DogViewer.prototype._initEventListener = function(ref) {
     var url = new URL(ref.toString());
     var path = decodeURIComponent(url.pathname);
@@ -548,7 +591,7 @@ DogViewer.prototype._initEventListener = function(ref) {
     ref.orderByPriority().on('child_added', function(snap, prKey) {
         var key = snap.key()
         var value = snap.val();
-        console.log('value    ' + key + '         prKey:' + prKey)
+        // console.log('value    ' + key + '         prKey:' + prKey)
         self._addNode(ref, key, prKey, value);
     });
 
@@ -575,35 +618,6 @@ DogViewer.prototype._destroyEventListener = function(ref) {
     var path = decodeURIComponent(url.pathname);
     var self = this;
     ref.orderByPriority().off();
-}
-
-DogViewer.prototype._addRoot = function(ref, value) {
-    this.view.remoteAddNode(new URL(ref.toString()), null, value);
-    this._initEventListener(ref);
-}
-
-DogViewer.prototype._addNode = function(ref, key, prKey, value) {
-    this.view.remoteAddNode(new URL(ref.child(key).toString()), prKey, value);
-    this._initEventListener(ref.child(key));
-}
-
-DogViewer.prototype._changeNode = function(ref, key, prKey, value) {
-    this.view.remoteChangeNode(new URL(ref.child(key).toString()), value);
-}
-
-DogViewer.prototype._removeNode = function(ref, key) {
-    this.view.remoteRemoveNode(new URL(ref.child(key).toString()))
-    this._destroyEventListener(ref.child(key));
-}
-
-DogViewer.prototype._moveNode = function(ref, key, prKey) {
-    this.view.remoteMoveNode(new URL(ref.child(key).toString()), prKey);
-}
-
-DogViewer.prototype.initWithRest = function(ref) {
-    var url = ref.toString();
-    this.view.remoteAddNode(new URL(url), null, {});
-    this._addNodeWithRest(ref.toString());
 }
 
 DogViewer.prototype._addNodeWithRest = function(url) {

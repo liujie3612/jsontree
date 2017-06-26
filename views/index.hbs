@@ -48,16 +48,20 @@
         websocketOnly: true
     };
     wilddog.initializeApp(rootConfig);
-
+    
     var ref = wilddog.sync().ref();
     // var ref = wilddog.sync().ref('messageboard');
-    // 
+    
     var viewController = new DomView(document.querySelector(".jstree"), function(url, rmCallback) {
         rmCallback(url);
     });
 
     var jstree = new DogViewer(ref, viewController);
-    jstree.init();
+    
+    var path = '/'
+    var path = 'messageboard'
+
+    jstree.init(path);
     </script>
 </body>
 
