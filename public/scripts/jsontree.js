@@ -72,7 +72,6 @@ var jsTree = function(el, host, path, opt) {
     var editing = false;
     var dom = rootDom.find("ul").eq(0);
 
-
     var childRef = rootRef.child(path);
     var key = childRef.key();
 
@@ -92,15 +91,9 @@ var jsTree = function(el, host, path, opt) {
         if (typeof val == 'object') {
             var currentEle = $(newNode(path, key));
         } else {
-            console.log(path)
             var currentEle = $(newLeaf(path, key, val));
         }
         $(currentEle).appendTo($(ele));
-
-        setTimeout(function() {
-            ele.find(".tree-content").removeClass("added");
-        }, 1000);
-
     }
 
     //nodeobj
@@ -114,21 +107,35 @@ var jsTree = function(el, host, path, opt) {
         var nodeTemlObj = $(nodeTemlObj).clone();
 
         initNodeEvent(nodeTemlObj, path, name)
-        initEventListener(nodeTemlObj, path)
+        initEventListener(nodeTemlObj, path, 'nodeObj')
+        elementMap[path] = $(nodeTemlObj);
 
+        setTimeout(function() {
+            nodeTemlObj.find(".added:first").removeClass("added");
+        }, 1000);
         return nodeTemlObj;
     }
 
     //leafobj
     function newLeaf(path, name, value) {
         var leafTemlObj = $(templObj.leafObj).clone();
+
         initNodeEvent(leafTemlObj, path, name, value);
+        initEventListener(leafTemlObj, path, 'leafObj')
+        elementMap[path] = $(leafTemlObj);
+
+        setTimeout(function() {
+            leafTemlObj.find(".added:first").removeClass("added");
+        }, 1000);
+
         return leafTemlObj;
     }
 
     function initNodeEvent(ele, path, name, value) {
+        var originVal = value
+
         $(ele).find("a.name").text(name).attr('href', encodeURI(path));
-        var treeContent = $(ele).find('.tree-content')
+        var treeContent = $(ele).find('.tree-content');
 
         //两种判断情况
         var addBtn = treeContent.find('.addBtn');
@@ -143,20 +150,22 @@ var jsTree = function(el, host, path, opt) {
         if (input && !editing) {
             input.attr({ 'name': value, 'value': value });
             input.focus(function(e) {
-                e.target.removeEventListener(e.type, arguments.callee);
+                // e.target.removeEventListener(e.type, arguments.callee);
                 editing = true;
-                inputStartEdit(this)
+                inputStartEdit(this);
 
                 input.on('keypress', function(e) {
                     var self = $(ele);
                     if (e.keyCode == 13 && editing) {
                         var val = self.find("input.valueedit:first").val();
                         self.removeClass("tree-content-hover");
+                        self.find("input.valueedit").attr("disabled", "disabled");
                         inputEndEdit(self.find("input.valueedit"));
                         editing = false;
-                        // client.set(fromInput(val));
+                        onSet(path, fromInput(val));
                     }
                 });
+
             });
 
             $(ele).on('click', 'div:first .removeBtn', function(e) {
@@ -178,16 +187,10 @@ var jsTree = function(el, host, path, opt) {
             if (input) {
                 input.on('blur', function(e) {
                     e.target.removeEventListener(e.type, arguments.callee);
-                    if (editing) {
-                        input.val(value)
-                        editing = false;
-                    } else {
-                        inputEndEdit(this)
-                        input.attr("disabled", "disabled");
-                    }
+                    inputEndEdit(this)
+                    input.attr("disabled", "disabled");
                 });
             }
-
         }, function() {
             var _this = this;
             if (editing) {
@@ -196,11 +199,15 @@ var jsTree = function(el, host, path, opt) {
                         editing = false;
                         $(_this).removeClass("tree-content-hover");
                         $(_this).find("input.valueedit:first").attr("disabled", "disabled");
+                        onQuery(path, function(snapshot) {
+                            $(_this).find("input.valueedit:first").val(JSON.stringify(snapshot.val()));
+
+                            // inputEndEdit($(_this).find("input.valueedit:first"))
+                        })
                     }
                 });
                 return
             }
-
             $(this).removeClass("tree-content-hover");
             $(this).find("input.valueedit").attr("disabled", "disabled");
             $(this).find(".sync-func-del").hide()
@@ -208,27 +215,117 @@ var jsTree = function(el, host, path, opt) {
 
     }
 
-    function initEventListener(nodeTemlObj, path) {
+    function initEventListener(temlObj, path, controller) {
         var client = rootRef.child(path);
-        
-        client.orderByPriority().on('child_added', function(snapshot) {
-            var key = snapshot.key()
-            var value = snapshot.val()
-            var childpath = '';
-            if (path == '/') {
-                childpath = "/" + key;
-            } else {
-                childpath = path + "/" + key;
-            }
 
-            build(nodeTemlObj.find("ul:first"), childpath, key, snapshot);
-        });
+        // obj 递归创建
+        if (controller == 'nodeObj') {
 
+            client.on('child_added', function(snapshot) {
+                var key = snapshot.key()
+                var value = snapshot.val()
+                var childpath = '';
+                if (path == '/') {
+                    childpath = "/" + key;
+                } else {
+                    childpath = path + "/" + key;
+                }
+                // 递归构建
+                build(temlObj.find("ul:first"), childpath, key, snapshot);
+                temlObj.find(".tree-content:first").addClass('changed');
+                setTimeout(function() {
+                    temlObj.find(".tree-content:first").removeClass('changed');
+                }, 1000);
+            });
+
+            client.on('child_changed', function(snapshot) {
+                if (snapshot.val() == null) {
+                    return;
+                }
+                if (elementMap[path]) {
+                    elementMap[path].find(".tree-content:first").addClass('changed');
+                    setTimeout(function() {
+                        elementMap[path].find(".tree-content:first").removeClass('changed');
+                    }, 1000);
+                }
+            });
+
+            client.on("child_removed", function(snapshot) {
+                var key = snapshot.key()
+                var value = snapshot.val()
+                var childpath = '';
+                if (path == '/') {
+                    childpath = "/" + key;
+                } else {
+                    childpath = path + "/" + key;
+                }
+
+                if (elementMap[childpath]) {
+                    elementMap[childpath].find(".tree-content:first").removeClass("changed").addClass("removed");
+                }
+
+                temlObj.find(".tree-content:first").addClass('changed');
+
+                setTimeout(function() {
+                    if (elementMap[childpath]) {
+                        temlObj.find(".tree-content:first").removeClass('changed');
+                        elementMap[childpath].remove();
+                        elementMap[childpath] = null
+                    }
+                }, 1000);
+            });
+
+            //moved status
+        }
+
+        // 叶子节点监听数据的变化
+        if (controller == 'leafObj') {
+            client.on('value', function(snapshot) {
+                if (snapshot.val() != null) {
+                    var key = snapshot.key()
+                    var value = snapshot.val()
+                    temlObj.find("input.valueedit").val(JSON.stringify(value));
+                    inputEndEdit(temlObj.find("input.valueedit"));
+                    temlObj.find(".tree-content:first").addClass('changed');
+                    setTimeout(function() {
+                        if (temlObj) {
+                            temlObj.find(".tree-content:first").removeClass('changed');
+                        }
+                    }, 1000);
+                } else {
+                    temlObj.remove()
+                }
+            })
+        }
     }
 
     function destroyEventListener(path) {
         var client = rootRef.child(path)
         client.orderByPriority().off();
+    }
+
+
+    function onSet(path, value) {
+        rootRef.child(path).set(value)
+    }
+
+    function onRomove(path) {
+        rootRef.child(path).remove()
+    }
+
+    function onQuery(path, callback) {
+        rootRef.child(path).once('value', function(snap) {
+            callback(snap)
+        })
+    }
+
+}
+
+function fromInput(value) {
+    try {
+        return JSON.parse(value);
+    } catch (e) {
+        return value;
     }
 }
 
@@ -237,18 +334,10 @@ function toInput(value) {
     return value;
 }
 
+
+
 String.prototype.replaceAll = function(s1, s2) {
     return this.replace(new RegExp(s1, "gm"), s2);
-}
-
-function inputEndEdit(input) {
-    var value = $(input).val();
-    var size = value.length;
-
-    if (size > max_char) {
-        value = value.substr(0, max_char) + "..."
-    }
-    $(input).val(value)
 }
 
 function inputStartEdit(input) {
@@ -256,4 +345,15 @@ function inputStartEdit(input) {
     if (name != null) {
         $(input).val(name)
     }
+}
+
+function inputEndEdit(input) {
+    var value = $(input).val();
+    var size = value.length;
+    $(input).attr("name", value)
+    // $(input).attr({ 'name': value, 'value': value });
+    if (size > max_char) {
+        value = value.substr(0, max_char) + "..."
+    }
+    $(input).val(value)
 }
