@@ -52,7 +52,6 @@ var templObj = {
         '<a href="#" class="spriteBtn removeBtn">&nbsp;</a>' +
         '</span>' +
         '</div>' +
-        '<ul></ul>' +
         '</li>',
     confirm: '<li class="confirm">' +
         '<ins>&nbsp;</ins>' +
@@ -68,6 +67,7 @@ var jsTree = function(el, host, path, opt) {
     var newElement = null;
     var editing = false;
     var dom = rootDom.find("ul").eq(0);
+    var delkeys = []
 
     var childRef = rootRef.child(path);
     var key = childRef.key();
@@ -91,11 +91,11 @@ var jsTree = function(el, host, path, opt) {
             var currentEle = $(newLeaf(path, key, val));
         }
 
+        $(currentEle).appendTo($(ele));
+
         setTimeout(function() {
             $(ele).find(".added:first").removeClass("added");
-        }, 1500);
-
-        $(currentEle).appendTo($(ele));
+        }, 1200);
     }
 
     //nodeobj
@@ -111,7 +111,6 @@ var jsTree = function(el, host, path, opt) {
         initNodeEvent(nodeTemlObj, path, name)
         initEventListener(nodeTemlObj, path, 'nodeObj')
         elementMap[path] = $(nodeTemlObj);
-
         return nodeTemlObj;
     }
 
@@ -140,8 +139,9 @@ var jsTree = function(el, host, path, opt) {
             $(this).parents('li').removeClass('jstree-closed').addClass('jstree-open')
             var newEdit = newLeafEdit();
             newElement = newEdit;
-            $(ele).find("span.tree-content").removeClass("tree-content-hover");
 
+            // $('.nav-tips').removeClass('nav-tips-top');
+            $(ele).find("span.tree-content").removeClass("tree-content-hover");
             $(ele).find('ul:first').prepend(new newConfirm(path));
             $(ele).find('ul:first').prepend(newEdit);
 
@@ -168,6 +168,24 @@ var jsTree = function(el, host, path, opt) {
 
         $(ele).on('click', '.data-cancle', function() {
             $(this).parents('.tree-content').find('.sync-func-del').hide()
+        });
+
+        $(ele).on('click', 'div:first .data-confirm', function() {
+            // $(this).parents('.tree-content').find('.sync-func-del').hide();
+            onQuery(path, function(snap) {
+                var delObj = snap.val();
+                onRemove(path)
+                delkeys = [];
+                delkeys = showAllKey(delObj);
+                delkeys.forEach(function(key, index) {
+                    if (path == '/') {
+                        var childpath = "/" + key;
+                    } else {
+                        var childpath = path + "/" + key;
+                    }
+                    onRemove(childpath);
+                });
+            })
         });
     }
 
@@ -196,6 +214,7 @@ var jsTree = function(el, host, path, opt) {
             if (editing) {
                 return;
             }
+
             $(this).addClass("tree-content-hover");
             $(this).find("input.valueedit:first").removeAttr("disabled");
             input.on('blur', function(e) {
@@ -232,98 +251,11 @@ var jsTree = function(el, host, path, opt) {
         $(ele).on('click', '.data-cancle', function() {
             $(this).parents('.tree-content').find('.sync-func-del').hide()
         });
-    }
 
+        $(ele).on('click', '.data-confirm', function() {
+            onRemove(path);
+        });
 
-    function initEventListener(temlObj, path, controller) {
-        var client = rootRef.child(path);
-
-        // obj 递归创建
-        if (controller == 'nodeObj') {
-            client.on('child_added', function(snapshot) {
-                var key = snapshot.key()
-                var value = snapshot.val()
-                var childpath = '';
-                if (path == '/') {
-                    childpath = "/" + key;
-                } else {
-                    childpath = path + "/" + key;
-                }
-                // 递归构建
-                build(temlObj.find("ul:first"), childpath, key, snapshot);
-
-                temlObj.find(".tree-content:first").addClass('changed');
-                setTimeout(function() {
-                    temlObj.find(".tree-content:first").removeClass('changed');
-                }, 1500);
-
-            });
-
-            client.on('child_changed', function(snapshot) {
-                if (snapshot.val() == null) {
-                    return;
-                }
-                if (elementMap[path]) {
-                    elementMap[path].find(".tree-content:first").addClass('changed');
-                    setTimeout(function() {
-                        elementMap[path].find(".tree-content:first").removeClass('changed');
-                    }, 1500);
-                }
-            });
-
-            client.on("child_removed", function(snapshot) {
-                var key = snapshot.key()
-                var value = snapshot.val()
-                var childpath = '';
-                if (path == '/') {
-                    childpath = "/" + key;
-                } else {
-                    childpath = path + "/" + key;
-                }
-
-                if (elementMap[childpath]) {
-                    elementMap[childpath].find(".tree-content:first").removeClass("changed").addClass("removed");
-                }
-
-                temlObj.find(".tree-content:first").addClass('changed');
-                setTimeout(function() {
-                    if (elementMap[childpath]) {
-                        temlObj.find(".tree-content:first").removeClass('changed');
-                        elementMap[childpath].remove();
-                        elementMap[childpath] = null
-                    }
-                }, 1500);
-            });
-
-            //moved status
-        }
-
-        // 叶子节点监听数据的变化
-        if (controller == 'leafObj') {
-            var init = true;
-            client.on('value', function(snapshot) {
-                if (snapshot.val() != null) {
-                    var key = snapshot.key()
-                    var value = snapshot.val()
-                    temlObj.find("input.valueedit").val(JSON.stringify(value));
-                    // input赋值
-                    inputEndEdit(temlObj.find("input.valueedit"));
-                    if (init) {
-                        init = false;
-                    } else {
-                        temlObj.find(".tree-content:first").addClass('changed');
-                        setTimeout(function() {
-                            if (temlObj) {
-                                temlObj.find(".tree-content:first").removeClass('changed');
-                            }
-                        }, 1500);
-
-                    }
-                } else {
-                    temlObj.remove()
-                }
-            })
-        }
     }
 
     function newLeafEdit() {
@@ -335,6 +267,7 @@ var jsTree = function(el, host, path, opt) {
             e.preventDefault()
             $(this).parents("li:first").remove();
             listSize -= 1;
+
             if (listSize == 0) {
                 leafEditObj.remove("ul:first");
                 leafEditObj.find("input.valueInput:first").parent().show()
@@ -359,19 +292,30 @@ var jsTree = function(el, host, path, opt) {
     }
 
 
+    function showAllKey(obj) {
+        for (var key in obj) {
+            if (typeof obj[key] == 'object') {
+                delkeys.push(key)
+                showAllKey(obj[key])
+            } else {
+                delkeys.push(key)
+            }
+        }
+        return delkeys
+    }
+
     function buildData(ele) {
         var res = {};
         var key = ele.find("span.tree-content:first input.nameInput:first").val();
         var value = ele.find("span.tree-content:first input.valueInput:first").val();
-
         if (value[0] == "\"" && value[value.length - 1] == "\"") {
             value = JSON.parse(value);
         }
-
         if (key == null || key == "") {
             return res
         }
         var childList = ele.find("ul:first>li");
+
         if (childList != null && childList.length > 0) {
             var childObj = {};
             for (var i = 0; i < childList.length; i++) {
@@ -401,65 +345,153 @@ var jsTree = function(el, host, path, opt) {
     function newConfirm(path) {
         var confirmObj = $(templObj.confirm).clone();
 
-        var onConfirm = function(path) {
+        var onConfirm = function(dom, path) {
             var obj = buildData(newElement);
             editing = false;
-
             for (key in obj) {
+                // 跳过继承属性
                 if (!obj.hasOwnProperty(key)) continue;
-
                 if (obj[key] != null && !isEmpty(obj[key])) {
                     var path = path + '/' + key
                     onSet(path, obj[key]);
-
-                    $('.adding').remove()
-                    $('.confirm').remove();
-                    // newElement.remove();
-                    // confirmObj.remove();
+                    $(dom).parents('ul:first').find('.adding,.confirm').remove()
                 }
             }
         }
 
-        var onCancel = function(path) {
+        var onCancel = function(dom) {
             editing = false;
-            newElement.remove();
-            confirmObj.remove();
+            $(dom).parents('ul:first').find('.adding,.confirm').remove()
         };
 
         confirmObj.on('click', '.confirmBtn', function(e) {
-            e.preventDefault()
-            onConfirm(path);
+            e.preventDefault();
+            onConfirm($(this), path);
         });
 
         confirmObj.on('click', '.cancelBtn', function(e) {
             e.preventDefault()
-            onCancel(path);
+            onCancel($(this));
         });
 
         newElement.on("click", "div:first a.removeBtn", function(e) {
             e.preventDefault()
-            onCancel(path);
+            onCancel($(this));
         });
 
         return confirmObj;
     }
 
+    function initEventListener(temlObj, path, controller) {
+        var client = rootRef.child(path);
 
-    function destroyEventListener(path) {
-        var client = rootRef.child(path)
-        client.orderByPriority().off();
+        // obj 递归创建
+        if (controller == 'nodeObj') {
+            client.on('child_added', function(snapshot) {
+                var key = snapshot.key()
+                var value = snapshot.val()
+                var childpath = '';
+                if (path == '/') {
+                    childpath = "/" + key;
+                } else {
+                    childpath = path + "/" + key;
+                }
+                // 递归构建
+                build(temlObj.find("ul:first"), childpath, key, snapshot);
+
+                temlObj.find(".tree-content:first").removeClass('added removed').addClass('changed')
+                setTimeout(function() {
+                    temlObj.find(".tree-content:first").removeClass('changed');
+                }, 1500);
+
+            });
+
+            client.on('child_changed', function(snapshot) {
+                var key = snapshot.key()
+                var value = snapshot.val()
+                if (snapshot.val() == null) {
+                    return;
+                }
+
+                if (typeof value != 'object') {
+                    // updateNodeValue();
+                }
+
+                temlObj.find(".tree-content:first").removeClass('added removed').addClass('changed');
+                setTimeout(function() {
+                    temlObj.find(".tree-content:first").removeClass('changed');
+                }, 1500);
+
+            });
+
+            client.on("child_removed", function(snapshot) {
+                var key = snapshot.key()
+                var value = snapshot.val()
+                console.log(value)
+                var childpath = '';
+                if (path == '/') {
+                    childpath = "/" + key;
+                } else {
+                    childpath = path + "/" + key;
+                }
+
+                if (elementMap[childpath]) {
+                    elementMap[childpath].find(".tree-content:first").removeClass('added changed').addClass("removed");
+                    destroyEventListener(childpath)
+                }
+
+                setTimeout(function() {
+                    if (elementMap[childpath]) {
+                        elementMap[childpath].remove();
+                        delete elementMap[childpath];
+                    }
+                }, 600);
+
+                //向上加修改
+                temlObj.find(".tree-content:first").removeClass('added removed').addClass('changed');
+                setTimeout(function() {
+                    temlObj.find(".tree-content:first").removeClass('changed');
+                }, 1500);
+            });
+
+            //moved status
+        }
+
+        // 叶子节点监听数据的变化
+        if (controller == 'leafObj') {
+            var init = true;
+            client.on('value', function(snapshot) {
+                if (snapshot.val() != null) {
+                    var key = snapshot.key()
+                    var value = snapshot.val()
+                    temlObj.find("input.valueedit").val(JSON.stringify(value));
+
+                    //input赋值
+                    inputEndEdit(temlObj.find("input.valueedit"));
+                    if (init) {
+                        init = false;
+                    } else {
+                        temlObj.find(".tree-content:first").removeClass('added removed').addClass('changed');
+                        setTimeout(function() {
+                            if (temlObj) {
+                                temlObj.find(".tree-content:first").removeClass('changed');
+                            }
+                        }, 1500);
+                    }
+                } else {
+                    temlObj.remove()
+                }
+            })
+        }
     }
 
     function onSet(path, value) {
         rootRef.child(path).set(value)
     }
 
-    // function onUpdate(path, value) {
-    //     rootRef.child(path).update(value)
-    // }
-
-    function onRomove(path) {
-        rootRef.child(path).remove()
+    function onRemove(path) {
+        rootRef.child(path).remove();
+        destroyEventListener(path)
     }
 
     function onQuery(path, callback) {
@@ -467,6 +499,12 @@ var jsTree = function(el, host, path, opt) {
             callback(snap)
         })
     }
+
+    function destroyEventListener(path) {
+        var client = rootRef.child(path)
+        client.off();
+    }
+
 
 }
 
@@ -484,7 +522,7 @@ function inputEndEdit(input) {
 
     $(input).attr({ 'name': value, 'value': value })
     if (size > 100) {
-        value = value.substr(0, max_char) + "..."
+        value = value.substr(0, 100) + "..."
     }
     $(input).val(value)
 }
