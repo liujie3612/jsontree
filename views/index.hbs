@@ -45,7 +45,7 @@
     <script type="text/javascript" src="/scripts/jquery-3.2.1.min.js"></script>
     <script type="text/javascript" src="/scripts/jsontree.js"></script>
     <script type="text/javascript">
-    var appid = '14789'
+    var appid = 'testbug'
 
     var host = appid + '.wilddogio.com';
     var rootConfig = {
@@ -56,7 +56,7 @@
     wilddog.initializeApp(rootConfig);
     var rootRef = wilddog.sync().ref();
     
-    jsTree('.jstree', host, '/messageboard')
+    jsTree('.jstree', host, '/')
     </script>
 </body>
 

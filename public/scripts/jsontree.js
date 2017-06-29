@@ -1,6 +1,3 @@
-var max_input = 400
-var max_char = 100
-
 var templObj = {
     nodeObj: '<li class="jstree-closed">' +
         '<div><ins class="jstree-icon">&nbsp;</ins>' +
@@ -31,7 +28,7 @@ var templObj = {
         '<span>' +
         '<a class="name" href="{path}"></a>' +
         '<span class="valueContainer">: ' +
-        '<input type="text" class="valueedit" name="{value}" value="{value}" disabled="disabled">' +
+        '<input type="text" class="valueedit" name="" value="" disabled="disabled">' +
         '<span class="sync-func-del"><span class="btn btn-red-full data-confirm">确认删除</span><span class="data-cancle">取消</span></span>' +
         '</span>' +
         '</span>' +
@@ -45,7 +42,7 @@ var templObj = {
         '<span class="tree-content">' +
         '<span>' +
         '<span class="nameLabel">name:</span>' +
-        '<input type="text" class="nameInput" placeholder="Name">' +
+        '<input type="text" class="nameInput" placeholder="Name" autofocus>' +
         '<span>' +
         '<span class="valueLabel">value:</span>' +
         '<input type="text" class="valueInput" placeholder="Value">' +
@@ -93,13 +90,18 @@ var jsTree = function(el, host, path, opt) {
         } else {
             var currentEle = $(newLeaf(path, key, val));
         }
+
+        setTimeout(function() {
+            $(ele).find(".added:first").removeClass("added");
+        }, 1500);
+
         $(currentEle).appendTo($(ele));
     }
 
     //nodeobj
     function newNode(path, name) {
         var liClass = 'jstree-closed';
-        var rootIsHover = $('.js-root span.tree-content').hasClass('tree-content-hover');
+        // var rootIsHover = $('.js-root span.tree-content').hasClass('tree-content-hover');
         if (path == '/') {
             liClass = 'jstree-open js-root';
         }
@@ -110,73 +112,85 @@ var jsTree = function(el, host, path, opt) {
         initEventListener(nodeTemlObj, path, 'nodeObj')
         elementMap[path] = $(nodeTemlObj);
 
-        setTimeout(function() {
-            nodeTemlObj.find(".added:first").removeClass("added");
-        }, 1000);
         return nodeTemlObj;
     }
 
     //leafobj
     function newLeaf(path, name, value) {
         var leafTemlObj = $(templObj.leafObj).clone();
-
-        initNodeEvent(leafTemlObj, path, name, value);
+        initLeafEvent(leafTemlObj, path, name, value);
         initEventListener(leafTemlObj, path, 'leafObj')
         elementMap[path] = $(leafTemlObj);
-
-        setTimeout(function() {
-            leafTemlObj.find(".added:first").removeClass("added");
-        }, 1000);
-
         return leafTemlObj;
     }
 
-    function initNodeEvent(ele, path, name, value) {
-        var originVal = value
-
+    function initNodeEvent(ele, path, name) {
         $(ele).find("a.name").text(name).attr('href', encodeURI(path));
         var treeContent = $(ele).find('.tree-content');
-
-        //两种判断情况
         var addBtn = treeContent.find('.addBtn');
+
+        $(ele).find("ins").click(function() {
+            $(ele).toggleClass('jstree-open jstree-closed')
+        });
+
+        addBtn.on('click', function(e) {
+            e.preventDefault()
+            editing = true;
+            //打开节点
+            $(this).parents('li').removeClass('jstree-closed').addClass('jstree-open')
+            var newEdit = newLeafEdit();
+            newElement = newEdit;
+            $(ele).find("span.tree-content").removeClass("tree-content-hover");
+
+            $(ele).find('ul:first').prepend(new newConfirm(path));
+            $(ele).find('ul:first').prepend(newEdit);
+
+        })
+
+        //normal
+        $(ele).find("span.tree-content").hover(function() {
+            if (editing) {
+                return;
+            }
+            $(this).addClass("tree-content-hover");
+        }, function() {
+            if (editing) {
+                return;
+            }
+            $(this).removeClass("tree-content-hover");
+            $(this).find(".sync-func-del").hide()
+        })
+
+        $(ele).on('click', 'div:first .removeBtn', function(e) {
+            e.preventDefault()
+            $(this).parents('.tree-content').find('.sync-func-del').fadeIn(100);
+        });
+
+        $(ele).on('click', '.data-cancle', function() {
+            $(this).parents('.tree-content').find('.sync-func-del').hide()
+        });
+    }
+
+    function initLeafEvent(ele, path, name, value) {
+        $(ele).find("a.name").text(name).attr('href', encodeURI(path));
+        var treeContent = $(ele).find('.tree-content');
         var input = treeContent.find('.valueedit');
 
-        if (addBtn) {
-            $(ele).find("ins").click(function() {
-                $(ele).toggleClass('jstree-open jstree-closed')
+        input.focus(function(e) {
+            // e.target.removeEventListener(e.type, arguments.callee);
+            editing = true;
+            input.on('keypress', function(e) {
+                var self = $(ele);
+                if (e.keyCode == 13 && editing) {
+                    editing = false;
+                    var val = self.find("input.valueedit:first").val();
+                    self.removeClass("tree-content-hover");
+                    self.find("input.valueedit").attr("disabled", "disabled");
+                    inputEndEdit(self.find("input.valueedit"));
+                    onSet(path, valToJson(val));
+                }
             });
-        }
-
-        if (input && !editing) {
-            input.attr({ 'name': value, 'value': value });
-            input.focus(function(e) {
-                // e.target.removeEventListener(e.type, arguments.callee);
-                editing = true;
-                inputStartEdit(this);
-
-                input.on('keypress', function(e) {
-                    var self = $(ele);
-                    if (e.keyCode == 13 && editing) {
-                        var val = self.find("input.valueedit:first").val();
-                        self.removeClass("tree-content-hover");
-                        self.find("input.valueedit").attr("disabled", "disabled");
-                        inputEndEdit(self.find("input.valueedit"));
-                        editing = false;
-                        onSet(path, fromInput(val));
-                    }
-                });
-
-            });
-
-            $(ele).on('click', 'div:first .removeBtn', function(e) {
-                e.preventDefault()
-                $(this).parents('.tree-content').find('.sync-func-del').fadeIn(100);
-            });
-
-            $(ele).on('click', '.data-cancle', function() {
-                $(this).parents('.tree-content').find('.sync-func-del').hide()
-            });
-        }
+        });
 
         $(ele).find("span.tree-content").hover(function() {
             if (editing) {
@@ -184,13 +198,11 @@ var jsTree = function(el, host, path, opt) {
             }
             $(this).addClass("tree-content-hover");
             $(this).find("input.valueedit:first").removeAttr("disabled");
-            if (input) {
-                input.on('blur', function(e) {
-                    e.target.removeEventListener(e.type, arguments.callee);
-                    inputEndEdit(this)
-                    input.attr("disabled", "disabled");
-                });
-            }
+            input.on('blur', function(e) {
+                // e.target.removeEventListener(e.type, arguments.callee);
+                inputEndEdit(this)
+                input.attr("disabled", "disabled");
+            });
         }, function() {
             var _this = this;
             if (editing) {
@@ -201,8 +213,7 @@ var jsTree = function(el, host, path, opt) {
                         $(_this).find("input.valueedit:first").attr("disabled", "disabled");
                         onQuery(path, function(snapshot) {
                             $(_this).find("input.valueedit:first").val(JSON.stringify(snapshot.val()));
-
-                            // inputEndEdit($(_this).find("input.valueedit:first"))
+                            inputEndEdit($(_this).find("input.valueedit:first"))
                         })
                     }
                 });
@@ -213,14 +224,22 @@ var jsTree = function(el, host, path, opt) {
             $(this).find(".sync-func-del").hide()
         })
 
+        $(ele).on('click', 'div:first .removeBtn', function(e) {
+            e.preventDefault()
+            $(this).parents('.tree-content').find('.sync-func-del').fadeIn(100);
+        });
+
+        $(ele).on('click', '.data-cancle', function() {
+            $(this).parents('.tree-content').find('.sync-func-del').hide()
+        });
     }
+
 
     function initEventListener(temlObj, path, controller) {
         var client = rootRef.child(path);
 
         // obj 递归创建
         if (controller == 'nodeObj') {
-
             client.on('child_added', function(snapshot) {
                 var key = snapshot.key()
                 var value = snapshot.val()
@@ -232,10 +251,12 @@ var jsTree = function(el, host, path, opt) {
                 }
                 // 递归构建
                 build(temlObj.find("ul:first"), childpath, key, snapshot);
+
                 temlObj.find(".tree-content:first").addClass('changed');
                 setTimeout(function() {
                     temlObj.find(".tree-content:first").removeClass('changed');
-                }, 1000);
+                }, 1500);
+
             });
 
             client.on('child_changed', function(snapshot) {
@@ -246,7 +267,7 @@ var jsTree = function(el, host, path, opt) {
                     elementMap[path].find(".tree-content:first").addClass('changed');
                     setTimeout(function() {
                         elementMap[path].find(".tree-content:first").removeClass('changed');
-                    }, 1000);
+                    }, 1500);
                 }
             });
 
@@ -265,14 +286,13 @@ var jsTree = function(el, host, path, opt) {
                 }
 
                 temlObj.find(".tree-content:first").addClass('changed');
-
                 setTimeout(function() {
                     if (elementMap[childpath]) {
                         temlObj.find(".tree-content:first").removeClass('changed');
                         elementMap[childpath].remove();
                         elementMap[childpath] = null
                     }
-                }, 1000);
+                }, 1500);
             });
 
             //moved status
@@ -280,18 +300,25 @@ var jsTree = function(el, host, path, opt) {
 
         // 叶子节点监听数据的变化
         if (controller == 'leafObj') {
+            var init = true;
             client.on('value', function(snapshot) {
                 if (snapshot.val() != null) {
                     var key = snapshot.key()
                     var value = snapshot.val()
                     temlObj.find("input.valueedit").val(JSON.stringify(value));
+                    // input赋值
                     inputEndEdit(temlObj.find("input.valueedit"));
-                    temlObj.find(".tree-content:first").addClass('changed');
-                    setTimeout(function() {
-                        if (temlObj) {
-                            temlObj.find(".tree-content:first").removeClass('changed');
-                        }
-                    }, 1000);
+                    if (init) {
+                        init = false;
+                    } else {
+                        temlObj.find(".tree-content:first").addClass('changed');
+                        setTimeout(function() {
+                            if (temlObj) {
+                                temlObj.find(".tree-content:first").removeClass('changed');
+                            }
+                        }, 1500);
+
+                    }
                 } else {
                     temlObj.remove()
                 }
@@ -299,15 +326,137 @@ var jsTree = function(el, host, path, opt) {
         }
     }
 
+    function newLeafEdit() {
+        /*点击'+'号出现的新叶*/
+        var listSize = 0;
+        var leafEditObj = $(templObj.editor).clone();
+
+        leafEditObj.on('click', 'ul:first>li>div .removeBtn', function(e) {
+            e.preventDefault()
+            $(this).parents("li:first").remove();
+            listSize -= 1;
+            if (listSize == 0) {
+                leafEditObj.remove("ul:first");
+                leafEditObj.find("input.valueInput:first").parent().show()
+            }
+        });
+
+        leafEditObj.on('click', 'div:first .addBtn', function(e) {
+            e.preventDefault()
+            var newEdit = newLeafEdit();
+
+            if (listSize == 0) {
+                leafEditObj.append("<ul></ul>");
+                leafEditObj.find("input.valueInput:first").parent().hide()
+            }
+
+            leafEditObj.find('ul:first').append(newEdit);
+            listSize += 1;
+
+        });
+
+        return leafEditObj;
+    }
+
+
+    function buildData(ele) {
+        var res = {};
+        var key = ele.find("span.tree-content:first input.nameInput:first").val();
+        var value = ele.find("span.tree-content:first input.valueInput:first").val();
+
+        if (value[0] == "\"" && value[value.length - 1] == "\"") {
+            value = JSON.parse(value);
+        }
+
+        if (key == null || key == "") {
+            return res
+        }
+        var childList = ele.find("ul:first>li");
+        if (childList != null && childList.length > 0) {
+            var childObj = {};
+            for (var i = 0; i < childList.length; i++) {
+                var childItem = buildData($(childList[i]));
+                for (k in childItem) {
+                    if (childItem.hasOwnProperty(k)) {
+                        if (typeof childItem[k] == 'object') {
+                            if (!isEmpty(childItem[k])) {
+                                childObj[k] = childItem[k];
+                            }
+                        } else {
+                            childObj[k] = childItem[k];
+                        }
+                    }
+                }
+            }
+
+            if (!isEmpty(childObj))
+                res[key] = childObj;
+        } else if (value != null) {
+            res[key] = value;
+        }
+
+        return res;
+    }
+
+    function newConfirm(path) {
+        var confirmObj = $(templObj.confirm).clone();
+
+        var onConfirm = function(path) {
+            var obj = buildData(newElement);
+            editing = false;
+
+            for (key in obj) {
+                if (!obj.hasOwnProperty(key)) continue;
+
+                if (obj[key] != null && !isEmpty(obj[key])) {
+                    var path = path + '/' + key
+                    onSet(path, obj[key]);
+
+                    $('.adding').remove()
+                    $('.confirm').remove();
+                    // newElement.remove();
+                    // confirmObj.remove();
+                }
+            }
+        }
+
+        var onCancel = function(path) {
+            editing = false;
+            newElement.remove();
+            confirmObj.remove();
+        };
+
+        confirmObj.on('click', '.confirmBtn', function(e) {
+            e.preventDefault()
+            onConfirm(path);
+        });
+
+        confirmObj.on('click', '.cancelBtn', function(e) {
+            e.preventDefault()
+            onCancel(path);
+        });
+
+        newElement.on("click", "div:first a.removeBtn", function(e) {
+            e.preventDefault()
+            onCancel(path);
+        });
+
+        return confirmObj;
+    }
+
+
     function destroyEventListener(path) {
         var client = rootRef.child(path)
         client.orderByPriority().off();
     }
 
-
     function onSet(path, value) {
         rootRef.child(path).set(value)
     }
+
+    // function onUpdate(path, value) {
+    //     rootRef.child(path).update(value)
+    // }
 
     function onRomove(path) {
         rootRef.child(path).remove()
@@ -321,7 +470,7 @@ var jsTree = function(el, host, path, opt) {
 
 }
 
-function fromInput(value) {
+function valToJson(value) {
     try {
         return JSON.parse(value);
     } catch (e) {
@@ -329,31 +478,20 @@ function fromInput(value) {
     }
 }
 
-function toInput(value) {
-    var value = JSON.stringify(value).replace(/\"/g, "&quot;");
-    return value;
-}
-
-
-
-String.prototype.replaceAll = function(s1, s2) {
-    return this.replace(new RegExp(s1, "gm"), s2);
-}
-
-function inputStartEdit(input) {
-    var name = $(input).attr("name");
-    if (name != null) {
-        $(input).val(name)
-    }
-}
-
 function inputEndEdit(input) {
     var value = $(input).val();
     var size = value.length;
-    $(input).attr("name", value)
-    // $(input).attr({ 'name': value, 'value': value });
-    if (size > max_char) {
+
+    $(input).attr({ 'name': value, 'value': value })
+    if (size > 100) {
         value = value.substr(0, max_char) + "..."
     }
     $(input).val(value)
 }
+
+function isEmpty(obj) {
+    for (var name in obj) {
+        return false;
+    }
+    return true;
+};
