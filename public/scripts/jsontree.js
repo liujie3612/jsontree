@@ -74,6 +74,7 @@ var jsTree = function(el, host, path, opt) {
 
     if (key == null) {
         key = host;
+        $('.data-bread-crumbs').hide()
     }
 
     wilddog.auth().onAuthStateChanged(function(user) {
@@ -81,6 +82,25 @@ var jsTree = function(el, host, path, opt) {
             .then(function(snapshot) {
                 build(dom, path, key, snapshot);
             })
+            .catch(function(err) {
+                var err = JSON.parse(JSON.stringify(err))
+                //数据量过大
+                if (err.code == 26104) {
+                    $('#loading').hide();
+                    $('.data-show .jstree,.data-show .legend').show();
+                    $('#tree .data-tips').show();
+                    $('.legend .func .unflod,.legend .func .collapse').hide();
+
+                    var currentEle = $(rootNode(host, path, key, opt));
+                    $(dom).append(currentEle);
+                } else if (err.code == 26102) {
+                    $('#loading').hide();
+                    $('.data-show .jstree,#tree .source-tips').show();
+                } else if (err.code == 26107) {
+                    $('#loading').hide();
+                    $('.data-show .jstree,#tree .device-tips').show();
+                }
+            });
     });
 
     function build(ele, path, key, snapshot) {
@@ -95,7 +115,7 @@ var jsTree = function(el, host, path, opt) {
 
         setTimeout(function() {
             $(ele).find(".added:first").removeClass("added");
-        }, 1200);
+        }, 1000);
     }
 
     //nodeobj
@@ -175,6 +195,7 @@ var jsTree = function(el, host, path, opt) {
             onQuery(path, function(snap) {
                 var delObj = snap.val();
                 onRemove(path)
+
                 delkeys = [];
                 delkeys = showAllKey(delObj);
                 delkeys.forEach(function(key, index) {
@@ -402,7 +423,7 @@ var jsTree = function(el, host, path, opt) {
                 temlObj.find(".tree-content:first").removeClass('added removed').addClass('changed')
                 setTimeout(function() {
                     temlObj.find(".tree-content:first").removeClass('changed');
-                }, 1500);
+                }, 1200);
 
             });
 
@@ -420,14 +441,13 @@ var jsTree = function(el, host, path, opt) {
                 temlObj.find(".tree-content:first").removeClass('added removed').addClass('changed');
                 setTimeout(function() {
                     temlObj.find(".tree-content:first").removeClass('changed');
-                }, 1500);
+                }, 1200);
 
             });
 
             client.on("child_removed", function(snapshot) {
                 var key = snapshot.key()
                 var value = snapshot.val()
-                console.log(value)
                 var childpath = '';
                 if (path == '/') {
                     childpath = "/" + key;
@@ -451,7 +471,7 @@ var jsTree = function(el, host, path, opt) {
                 temlObj.find(".tree-content:first").removeClass('added removed').addClass('changed');
                 setTimeout(function() {
                     temlObj.find(".tree-content:first").removeClass('changed');
-                }, 1500);
+                }, 1200);
             });
 
             //moved status
@@ -468,15 +488,16 @@ var jsTree = function(el, host, path, opt) {
 
                     //input赋值
                     inputEndEdit(temlObj.find("input.valueedit"));
+
                     if (init) {
                         init = false;
                     } else {
                         temlObj.find(".tree-content:first").removeClass('added removed').addClass('changed');
                         setTimeout(function() {
                             if (temlObj) {
-                                temlObj.find(".tree-content:first").removeClass('changed');
+                                temlObj.find(".tree-content:first").removeClass('changed tree-content-hover');
                             }
-                        }, 1500);
+                        }, 1200);
                     }
                 } else {
                     temlObj.remove()
@@ -492,6 +513,7 @@ var jsTree = function(el, host, path, opt) {
     function onRemove(path) {
         rootRef.child(path).remove();
         destroyEventListener(path)
+        delete elementMap[path];
     }
 
     function onQuery(path, callback) {
@@ -505,7 +527,28 @@ var jsTree = function(el, host, path, opt) {
         client.off();
     }
 
+    function rootNode(host, path, name, opt) {
+        // build html
+        var liClass = "jstree-closed";
+        var tmp = $('<li class="' + liClass + '" ><div><ins class="jstree-icon">&nbsp;</ins><span class="tree-content"><span><a class="name" href="{path}"></a><span class="valueContainer"></span></span></span></div><ul></ul></li>'
+            .replaceAll('{path}', path)
+        );
+        tmp.find("a").text(name);
+        // click the "+" or "-" to control the tree
+        tmp.find("ins").click(function() {
+            classAttr = $(tmp).attr("class");
+            if (classAttr == "jstree-open") {
+                $(tmp).attr("class", "jstree-closed");
+                $(tmp).children('li').remove();
+            } else {
+                $(tmp).attr("class", "jstree-open");
+                getDataByREST(tmp, host, path, opt);
+            }
+        });
 
+        elementMap[path] = tmp;
+        return tmp;
+    }
 }
 
 function valToJson(value) {
@@ -520,7 +563,10 @@ function inputEndEdit(input) {
     var value = $(input).val();
     var size = value.length;
 
-    $(input).attr({ 'name': value, 'value': value })
+    $(input).attr({
+        'name': value,
+        'value': value
+    })
     if (size > 100) {
         value = value.substr(0, 100) + "..."
     }
